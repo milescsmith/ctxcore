@@ -123,9 +123,7 @@ class RegionOrGeneIDs:
 
                     if extract_gene_id_from_region_id_regex_replace:
                         # Extract gene ID from region ID.
-                        gene_id = re.sub(
-                            extract_gene_id_from_region_id_regex_replace, "", region_id
-                        )
+                        gene_id = re.sub(extract_gene_id_from_region_id_regex_replace, "", region_id)
 
                         if gene_id not in gene_ids_set:
                             gene_ids.append(gene_id)
@@ -186,9 +184,7 @@ class RegionOrGeneIDs:
 
                     if extract_gene_id_from_region_id_regex_replace:
                         # Extract gene ID from region ID.
-                        gene_id = re.sub(
-                            extract_gene_id_from_region_id_regex_replace, "", region_id
-                        )
+                        gene_id = re.sub(extract_gene_id_from_region_id_regex_replace, "", region_id)
 
                         if gene_id not in gene_ids_set:
                             gene_ids.append(gene_id)
@@ -282,14 +278,10 @@ class RegionOrGeneIDs:
         if not isinstance(other, RegionOrGeneIDs):
             return NotImplemented
 
-        assert self.type == other.type, (
-            "RegionOrGeneIDs objects are of a different type."
-        )
+        assert self.type == other.type, "RegionOrGeneIDs objects are of a different type."
 
         return RegionOrGeneIDs(
-            region_or_gene_ids=sorted(
-                self.ids_set.difference(other.ids_set), key=lambda x: self.ids_dict[x]
-            ),
+            region_or_gene_ids=sorted(self.ids_set.difference(other.ids_set), key=lambda x: self.ids_dict[x]),
             regions_or_genes_type=self.type,
         )
 
@@ -304,14 +296,10 @@ class RegionOrGeneIDs:
         if not isinstance(other, RegionOrGeneIDs):
             return NotImplemented
 
-        assert self.type == other.type, (
-            "RegionOrGeneIDs objects are of a different type."
-        )
+        assert self.type == other.type, "RegionOrGeneIDs objects are of a different type."
 
         return RegionOrGeneIDs(
-            region_or_gene_ids=sorted(
-                self.ids_set.intersection(other.ids_set), key=lambda x: self.ids_dict[x]
-            ),
+            region_or_gene_ids=sorted(self.ids_set.intersection(other.ids_set), key=lambda x: self.ids_dict[x]),
             regions_or_genes_type=self.type,
         )
 
@@ -326,9 +314,7 @@ class RegionOrGeneIDs:
         if not isinstance(other, RegionOrGeneIDs):
             return NotImplemented
 
-        assert self.type == other.type, (
-            "RegionOrGeneIDs objects are of a different type."
-        )
+        assert self.type == other.type, "RegionOrGeneIDs objects are of a different type."
 
         return self.ids_set.issubset(other.ids_set)
 
@@ -343,9 +329,7 @@ class RegionOrGeneIDs:
         if not isinstance(other, RegionOrGeneIDs):
             return NotImplemented
 
-        assert self.type == other.type, (
-            "RegionOrGeneIDs objects are of a different type."
-        )
+        assert self.type == other.type, "RegionOrGeneIDs objects are of a different type."
 
         return self.ids_set.issuperset(other.ids_set)
 
@@ -364,9 +348,7 @@ class RegionOrGeneIDs:
         if not isinstance(other, RegionOrGeneIDs):
             return NotImplemented
 
-        assert self.type == other.type, (
-            "RegionOrGeneIDs objects are of a different type."
-        )
+        assert self.type == other.type, "RegionOrGeneIDs objects are of a different type."
 
         return RegionOrGeneIDs(
             region_or_gene_ids=sorted(

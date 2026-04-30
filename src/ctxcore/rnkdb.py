@@ -1,18 +1,14 @@
-from __future__ import annotations
-
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from cytoolz import memoize
 
 from ctxcore.ctdb import CisTargetDatabase
 from ctxcore.datatypes import RegionOrGeneIDs
 
-if TYPE_CHECKING:
-    import pandas as pd
+from ctxcore.genesig import GeneSignature
+import pandas as pd
 
-    from ctxcore.genesig import GeneSignature
 
 
 class RankingDatabase(metaclass=ABCMeta):
@@ -92,7 +88,7 @@ class FeatherRankingDatabase(RankingDatabase):
     The rankings of the genes are 0-based.
     """
 
-    def __init__(self, fname: str, name: str) -> None:
+    def __init__(self, fname: Path, name: str) -> None:
         """
         Create a new feather database.
 
@@ -101,12 +97,12 @@ class FeatherRankingDatabase(RankingDatabase):
         """
         super().__init__(name=name)
 
-        assert Path(fname).is_file(), f"""Database "{fname}" doesn't exist."""
+        if not fname.exists():
+            msg = f"""Database "{fname}" doesn't exist."""
+            raise FileNotFoundError(msg)
 
         self._fname = fname
-        self.ct_db = CisTargetDatabase.init_ct_db(
-            ct_db_filename=self._fname, engine="pyarrow"
-        )
+        self.ct_db = CisTargetDatabase.init_ct_db(ct_db_filename=self._fname, engine="pyarrow")
 
     @property
     @memoize
@@ -119,9 +115,7 @@ class FeatherRankingDatabase(RankingDatabase):
         return self.ct_db.all_region_or_gene_ids.ids
 
     def load_full(self) -> pd.DataFrame:
-        return self.ct_db.subset_to_pandas(
-            region_or_gene_ids=self.ct_db.all_region_or_gene_ids
-        )
+        return self.ct_db.subset_to_pandas(region_or_gene_ids=self.ct_db.all_region_or_gene_ids)
 
     def load(self, gs: GeneSignature) -> pd.DataFrame:
         # For some genes in the signature there might not be a rank available in the
@@ -160,7 +154,7 @@ class MemoryDecorator(RankingDatabase):
         return self._df.loc[:, self._df.columns.isin(gs.genes)]
 
 
-def opendb(fname: str, name: str) -> RankingDatabase:
+def opendb(fname: Path, name: str | None) -> RankingDatabase:
     """
     Open a ranking database.
 
@@ -168,13 +162,16 @@ def opendb(fname: str, name: str) -> RankingDatabase:
     :param name: The name of the database.
     :return: A ranking database.
     """
-    assert Path(fname).is_file(), f'"{fname}" does not exist.'
-    assert name, "A database should be given a proper name."
+    if not fname.exists():
+        msg = f'"{fname}" does not exist.'
+        raise FileNotFoundError(msg)
+    if name is None:
+        msg = "A database should be given a proper name."
+        raise ValueError(msg)
 
-    extension = Path(fname).suffix
-    if extension == ".feather":
+    if fname.suffix == ".feather":
         # noinspection PyTypeChecker
         return FeatherRankingDatabase(fname, name=name)
     else:
-        msg = f'"{extension}" is an unknown extension.'
+        msg = f'"{fname.suffix!s}" is an unknown extension.'
         raise ValueError(msg)

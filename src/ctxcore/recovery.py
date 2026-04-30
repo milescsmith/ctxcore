@@ -24,9 +24,7 @@ __all__ = [
 LOGGER = logging.getLogger(__name__)
 
 
-def derive_rank_cutoff(
-    auc_threshold: float, total_genes: int, rank_threshold: int | None = None
-) -> int:
+def derive_rank_cutoff(auc_threshold: float, total_genes: int, rank_threshold: int | None = None) -> int:
     """
     Get rank cutoff.
 
@@ -40,12 +38,8 @@ def derive_rank_cutoff(
     if not rank_threshold:
         rank_threshold = total_genes - 1
 
-    assert 0 < rank_threshold < total_genes, (
-        f"Rank threshold must be an integer between 1 and {total_genes:d}."
-    )
-    assert 0.0 < auc_threshold <= 1.0, (
-        "AUC threshold must be a fraction between 0.0 and 1.0."
-    )
+    assert 0 < rank_threshold < total_genes, f"Rank threshold must be an integer between 1 and {total_genes:d}."
+    assert 0.0 < auc_threshold <= 1.0, "AUC threshold must be a fraction between 0.0 and 1.0."
 
     # In the R implementation the cutoff is rounded.
     rank_cutoff = round(auc_threshold * total_genes)
@@ -75,9 +69,7 @@ def rcc2d(rankings: np.ndarray, weights: np.ndarray, rank_threshold: int) -> np.
     rccs = np.empty(shape=(n_features, rank_threshold))  # Pre-allocation.
     for row_idx in range(n_features):
         curranking = rankings[row_idx, :]
-        rccs[row_idx, :] = np.cumsum(
-            np.bincount(curranking, weights=weights)[:rank_threshold]
-        )
+        rccs[row_idx, :] = np.cumsum(np.bincount(curranking, weights=weights)[:rank_threshold])
     return rccs
 
 
@@ -109,9 +101,7 @@ def recovery(
     features, _genes, rankings = rnk.index.values, rnk.columns.values, rnk.values
     weights = np.insert(weights, len(weights), 0.0)
     n_features = len(features)
-    rankings = np.append(
-        rankings, np.full(shape=(n_features, 1), fill_value=total_genes), axis=1
-    )
+    rankings = np.append(rankings, np.full(shape=(n_features, 1), fill_value=total_genes), axis=1)
 
     # Calculate recovery curves.
     rccs = rcc2d(rankings, weights, rank_threshold)
@@ -130,9 +120,7 @@ def recovery(
     return rccs, aucs
 
 
-def enrichment4cells(
-    rnk_mtx: pd.DataFrame, regulon: GeneSignature, auc_threshold: float = 0.05
-) -> pd.DataFrame:
+def enrichment4cells(rnk_mtx: pd.DataFrame, regulon: GeneSignature, auc_threshold: float = 0.05) -> pd.DataFrame:
     """
     Calculate the enrichment of the regulon for the cells in the ranking dataframe.
 
@@ -143,29 +131,17 @@ def enrichment4cells(
     :return:
     """
     total_genes = len(rnk_mtx.columns)
-    index = pd.MultiIndex.from_tuples(
-        list(zip(rnk_mtx.index.values, repeat(regulon.name))), names=["Cell", "Regulon"]
-    )
+    index = pd.MultiIndex.from_tuples(list(zip(rnk_mtx.index.values, repeat(regulon.name))), names=["Cell", "Regulon"])
     rnk = rnk_mtx.iloc[:, rnk_mtx.columns.isin(regulon.genes)]
     if rnk.empty or (float(len(rnk.columns)) / float(len(regulon))) < 0.80:
-        LOGGER.warning(
-            f"Less than 80% of the genes in {regulon.name} are present in the "
-            "expression matrix."
-        )
+        LOGGER.warning(f"Less than 80% of the genes in {regulon.name} are present in the expression matrix.")
         return pd.DataFrame(
             index=index,
             data={"AUC": np.zeros(shape=(rnk_mtx.shape[0]), dtype=np.float64)},
         )
     else:
-        weights = np.asarray(
-            [
-                regulon[gene] if gene in regulon.genes else 1.0
-                for gene in rnk.columns.values
-            ]
-        )
-        return pd.DataFrame(
-            index=index, data={"AUC": aucs(rnk, total_genes, weights, auc_threshold)}
-        )
+        weights = np.asarray([regulon[gene] if gene in regulon.genes else 1.0 for gene in rnk.columns.values])
+        return pd.DataFrame(index=index, data={"AUC": aucs(rnk, total_genes, weights, auc_threshold)})
 
 
 def enrichment4features(
@@ -200,9 +176,7 @@ def enrichment4features(
     ness = (aucs - aucs.mean()) / aucs.std()
 
     # The creation of a dataframe is a severe performance penalty.
-    df_nes = pd.DataFrame(
-        index=features, data={("Enrichment", "AUC"): aucs, ("Enrichment", "NES"): ness}
-    )
+    df_nes = pd.DataFrame(index=features, data={("Enrichment", "AUC"): aucs, ("Enrichment", "NES"): ness})
     df_rnks = pd.DataFrame(
         index=features,
         columns=pd.MultiIndex.from_tuples(list(zip(repeat("Ranking"), genes))),
@@ -210,9 +184,7 @@ def enrichment4features(
     )
     df_rccs = pd.DataFrame(
         index=features,
-        columns=pd.MultiIndex.from_tuples(
-            list(zip(repeat("Recovery"), np.arange(rank_threshold)))
-        ),
+        columns=pd.MultiIndex.from_tuples(list(zip(repeat("Recovery"), np.arange(rank_threshold)))),
         data=rccs,
     )
     return pd.concat([df_nes, df_rccs, df_rnks], axis=1)
@@ -257,9 +229,8 @@ def leading_edge(
         return list(
             zip(
                 filtered_gene_ids,
-                weights[sorted_idx][filtered_idx]
-                if weights is not None
-                else sranking[filtered_idx],
+                weights[sorted_idx][filtered_idx] if weights is not None else sranking[filtered_idx],
+                strict=True,
             )
         )
 
@@ -288,11 +259,7 @@ def leading_edge4row(
         part of the leading edge with its rank or with its importance (if gene signature
         supplied).
     """
-    return pd.Series(
-        data=leading_edge(
-            row["Recovery"].values, avg2stdrcc, row["Ranking"].values, genes, weights
-        )
-    )
+    return pd.Series(data=leading_edge(row["Recovery"].values, avg2stdrcc, row["Ranking"].values, genes, weights))
 
 
 # Giving numba a signature makes the code marginally faster but with losing flexibility
@@ -322,9 +289,7 @@ def auc1d(ranking: np.ndarray, rank_cutoff: int, max_auc: float) -> float:
 
 
 @jit(nopython=True)
-def weighted_auc1d(
-    ranking: np.ndarray, weights: np.ndarray, rank_cutoff: int, max_auc: float
-) -> np.ndarray:
+def weighted_auc1d(ranking: np.ndarray, weights: np.ndarray, rank_cutoff: int, max_auc: float) -> np.ndarray:
     """
     Calculate the AUC of the weighted recovery curve of a single ranking.
 
@@ -346,9 +311,7 @@ def weighted_auc1d(
     return np.sum(np.diff(x) * y) / max_auc
 
 
-def auc2d(
-    rankings: np.ndarray, weights: np.ndarray, rank_cutoff: int, max_auc: float
-) -> np.ndarray:
+def auc2d(rankings: np.ndarray, weights: np.ndarray, rank_cutoff: int, max_auc: float) -> np.ndarray:
     """
     Calculate the AUCs of multiple rankings.
 
@@ -361,15 +324,11 @@ def auc2d(
     n_features = rankings.shape[0]
     aucs = np.empty(shape=(n_features,), dtype=np.float64)  # Pre-allocation.
     for row_idx in range(n_features):
-        aucs[row_idx] = weighted_auc1d(
-            rankings[row_idx, :], weights, rank_cutoff, max_auc
-        )
+        aucs[row_idx] = weighted_auc1d(rankings[row_idx, :], weights, rank_cutoff, max_auc)
     return aucs
 
 
-def aucs(
-    rnk: pd.DataFrame, total_genes: int, weights: np.ndarray, auc_threshold: float
-) -> np.ndarray:
+def aucs(rnk: pd.DataFrame, total_genes: int, weights: np.ndarray, auc_threshold: float) -> np.ndarray:
     """
     Calculate AUCs (implementation without calculating recovery curves first).
 

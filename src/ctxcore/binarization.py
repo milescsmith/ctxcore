@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from multiprocessing import Pool
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -59,12 +60,8 @@ def derive_threshold(
         else:
             # Compare Bayesian Information Content of two Gaussian Mixture Models.
             X = data.reshape(-1, 1)
-            gmm2 = mixture.GaussianMixture(
-                n_components=2, covariance_type="full", random_state=seed
-            ).fit(X)
-            gmm1 = mixture.GaussianMixture(
-                n_components=1, covariance_type="full", random_state=seed
-            ).fit(X)
+            gmm2 = mixture.GaussianMixture(n_components=2, covariance_type="full", random_state=seed).fit(X)
+            gmm1 = mixture.GaussianMixture(n_components=1, covariance_type="full", random_state=seed).fit(X)
             return gmm2.bic(X) <= gmm1.bic(X)
 
     if not isbimodal(data, method):
@@ -74,15 +71,13 @@ def derive_threshold(
     else:
         # Fit a two component Gaussian Mixture model on the AUC distribution using an
         # Expectation-Maximization algorithm to identify the peaks in the distribution.
-        gmm2 = mixture.GaussianMixture(
-            n_components=2, covariance_type="full", random_state=seed
-        ).fit(data.reshape(-1, 1))
+        gmm2 = mixture.GaussianMixture(n_components=2, covariance_type="full", random_state=seed).fit(
+            data.reshape(-1, 1)
+        )
         # For a bimodal distribution the threshold is defined as the "trough" in
         # between the two peaks. This is solved as a minimization problem on the kernel
         # smoothed density.
-        return minimize_scalar(
-            fun=stats.gaussian_kde(data), bounds=sorted(gmm2.means_), method="bounded"
-        ).x[0]
+        return minimize_scalar(fun=stats.gaussian_kde(data), bounds=sorted(gmm2.means_), method="bounded").x[0]
 
 
 def binarize(
@@ -104,13 +99,9 @@ def binarize(
         each regulon.
     """  # noqa: D205
 
-    def derive_thresholds(
-        auc_mtx: pd.DataFrame, seed: float | None = seed
-    ) -> pd.Series:
+    def derive_thresholds(auc_mtx: pd.DataFrame, seed: float | None = seed) -> pd.Series:
         with Pool(processes=num_workers) as p:
-            thrs = p.starmap(
-                derive_threshold, [(auc_mtx, c, seed) for c in auc_mtx.columns]
-            )
+            thrs = p.starmap(derive_threshold, [(auc_mtx, c, seed) for c in auc_mtx.columns])
         return pd.Series(index=auc_mtx.columns, data=thrs)
 
     thresholds = derive_thresholds(auc_mtx)

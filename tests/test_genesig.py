@@ -1,11 +1,12 @@
 import attr
 import pytest
-from pkg_resources import resource_filename
+from importlib import resources
 
 from ctxcore.genesig import GeneSignature, Regulon
 
 TEST_SIGNATURE = "msigdb_cancer_c6"
-TEST_SIGNATURE_FNAME = resource_filename("resources.tests", "c6.all.v6.1.symbols.gmt")
+with resources.path("resources.tests", "c6.all.v6.1.symbols.gmt") as fname:
+    TEST_SIGNATURE_FNAME = fname
 
 
 def test_init1() -> None:

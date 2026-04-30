@@ -91,11 +91,7 @@ def get_ct_db_type_from_ct_db_filename(
                 elif m.group(3, 4) != (None, None):
                     column_kind, row_kind = m.group(3, 4)
 
-    if (
-        isinstance(scores_or_rankings, str)
-        and isinstance(column_kind, str)
-        and isinstance(row_kind, str)
-    ):
+    if isinstance(scores_or_rankings, str) and isinstance(column_kind, str) and isinstance(row_kind, str):
         return scores_or_rankings, column_kind, row_kind
     elif not scores_or_rankings and not column_kind and not row_kind:
         msg = (
@@ -197,9 +193,7 @@ class CisTargetDatabase:
         # Get database index column ("motifs", "tracks", "regions" or "genes" depending
         # on the database type). Start with the last column (as the index column
         # normally should be the latest).
-        for column_idx, column_name in zip(
-            range(len(column_names) - 1, -1, -1), column_names[::-1]
-        ):
+        for column_idx, column_name in zip(range(len(column_names) - 1, -1, -1), column_names[::-1]):
             if column_name in {"motifs", "tracks", "regions", "genes"}:
                 index_column_idx = column_idx
                 index_column_name = column_name
@@ -238,14 +232,10 @@ class CisTargetDatabase:
             raise ValueError(msg)
 
         # Get all column names without index column name.
-        column_names = (
-            column_names[0:index_column_idx] + column_names[index_column_idx + 1 :]
-        )
+        column_names = column_names[0:index_column_idx] + column_names[index_column_idx + 1 :]
 
         # Get dtype for those columns (should be the same for all of them).
-        column_dtype = list(
-            set(dtypes[0:index_column_idx] + dtypes[index_column_idx + 1 :])
-        )
+        column_dtype = list(set(dtypes[0:index_column_idx] + dtypes[index_column_idx + 1 :]))
 
         if len(column_dtype) != 1:
             msg = f"Only one dtype is allowed for {column_names[0:10]} ...: {column_dtype}"
@@ -314,19 +304,13 @@ class CisTargetDatabase:
                 ct_db_filename=ct_db_filename,
                 region_or_gene_ids=RegionOrGeneIDs(
                     region_or_gene_ids=column_names,
-                    regions_or_genes_type=RegionsOrGenesType.from_str(
-                        regions_or_genes_type=column_kind
-                    ),
+                    regions_or_genes_type=RegionsOrGenesType.from_str(regions_or_genes_type=column_kind),
                 ),
                 motif_or_track_ids=MotifOrTrackIDs(
                     motif_or_track_ids=row_names,
-                    motifs_or_tracks_type=MotifsOrTracksType.from_str(
-                        motifs_or_tracks_type=row_kind
-                    ),
+                    motifs_or_tracks_type=MotifsOrTracksType.from_str(motifs_or_tracks_type=row_kind),
                 ),
-                scores_or_rankings=ScoresOrRankingsType.from_str(
-                    scores_or_rankings_type=scores_or_rankings
-                ),
+                scores_or_rankings=ScoresOrRankingsType.from_str(scores_or_rankings_type=scores_or_rankings),
                 dtype=dtype,
                 engine=engine,
             )
@@ -375,12 +359,8 @@ class CisTargetDatabase:
         self.region_or_gene_ids_loaded: RegionOrGeneIDs | None = None
 
     def __str__(self) -> str:
-        all_regions_or_gene_ids_formatted = "\n    ".join(
-            str(self.all_region_or_gene_ids).split("\n")
-        )
-        all_motif_or_track_ids_formatted = "\n    ".join(
-            str(self.all_motif_or_track_ids).split("\n")
-        )
+        all_regions_or_gene_ids_formatted = "\n    ".join(str(self.all_region_or_gene_ids).split("\n"))
+        all_motif_or_track_ids_formatted = "\n    ".join(str(self.all_motif_or_track_ids).split("\n"))
 
         return (
             f"CisTargetDatabase(\n"
@@ -520,11 +500,7 @@ class CisTargetDatabase:
             # "motifs" or "track" column from cisTarget Feather file as a pyarrow Table.
             self.df_cached = pl.read_ipc(
                 file=self.ct_db_filename,
-                columns=(
-                    list(found_region_or_gene_ids.sort().ids)
-                    if sort
-                    else list(found_region_or_gene_ids.ids)
-                )
+                columns=(list(found_region_or_gene_ids.sort().ids) if sort else list(found_region_or_gene_ids.ids))
                 + [
                     self.all_motif_or_track_ids.type.value,
                 ],
@@ -546,9 +522,7 @@ class CisTargetDatabase:
 
             # Get region IDs or gene IDs subset for which no scores/rankings were loaded
             # before.
-            region_or_gene_ids_to_load = found_region_or_gene_ids.difference(
-                self.region_or_gene_ids_loaded
-            )
+            region_or_gene_ids_to_load = found_region_or_gene_ids.difference(self.region_or_gene_ids_loaded)
 
             # Check if new region IDs or gene IDs need to be loaded.
             if len(region_or_gene_ids_to_load) != 0:
@@ -566,24 +540,16 @@ class CisTargetDatabase:
                 )
 
                 # Keep track of loaded region IDs or gene IDs scores/rankings.
-                self.region_or_gene_ids_loaded = found_region_or_gene_ids.union(
-                    self.region_or_gene_ids_loaded
-                )
+                self.region_or_gene_ids_loaded = found_region_or_gene_ids.union(self.region_or_gene_ids_loaded)
 
                 # Store new pyarrow Table with previously and newly loaded region IDs or
                 # gene IDs scores/rankings.
                 self.df_cached = self.df_cached.select(
-                    (
-                        self.region_or_gene_ids_loaded.sort().ids
-                        if sort
-                        else self.region_or_gene_ids_loaded.ids
-                    )
+                    (self.region_or_gene_ids_loaded.sort().ids if sort else self.region_or_gene_ids_loaded.ids)
                     + (self.all_motif_or_track_ids.type.value,)
                 )
 
-    def _prefetch_as_pyarrow_table(
-        self, region_or_gene_ids: RegionOrGeneIDs, *, sort: bool = False
-    ) -> None:
+    def _prefetch_as_pyarrow_table(self, region_or_gene_ids: RegionOrGeneIDs, *, sort: bool = False) -> None:
         """
         Fetch scores or rankings for input region IDs or gene IDs from cisTarget
         database file for region IDs or gene IDs which were not prefetched in previous
@@ -616,11 +582,7 @@ class CisTargetDatabase:
             # "motifs" or "track" column from cisTarget Feather file as a pyarrow Table.
             self.df_cached = pf.read_table(
                 source=self.ct_db_filename,
-                columns=(
-                    found_region_or_gene_ids.sort().ids
-                    if sort
-                    else found_region_or_gene_ids.ids
-                )
+                columns=(found_region_or_gene_ids.sort().ids if sort else found_region_or_gene_ids.ids)
                 + (self.all_motif_or_track_ids.type.value,),
                 memory_map=False,
                 use_threads=True,
@@ -639,9 +601,7 @@ class CisTargetDatabase:
 
             # Get region IDs or gene IDs subset for which no scores/rankings were loaded
             # before.
-            region_or_gene_ids_to_load = found_region_or_gene_ids.difference(
-                self.region_or_gene_ids_loaded
-            )
+            region_or_gene_ids_to_load = found_region_or_gene_ids.difference(self.region_or_gene_ids_loaded)
 
             # Check if new region IDs or gene IDs need to be loaded.
             if len(region_or_gene_ids_to_load) != 0:
@@ -664,18 +624,12 @@ class CisTargetDatabase:
                     pa_table = pa_table.append_column(column._name, column)
 
                 # Keep track of loaded region IDs or gene IDs scores/rankings.
-                self.region_or_gene_ids_loaded = found_region_or_gene_ids.union(
-                    self.region_or_gene_ids_loaded
-                )
+                self.region_or_gene_ids_loaded = found_region_or_gene_ids.union(self.region_or_gene_ids_loaded)
 
                 # Store new pyarrow Table with previously and newly loaded region IDs or
                 # gene IDs scores/rankings.
                 self.df_cached = pa_table.select(
-                    (
-                        self.region_or_gene_ids_loaded.sort().ids
-                        if sort
-                        else self.region_or_gene_ids_loaded.ids
-                    )
+                    (self.region_or_gene_ids_loaded.sort().ids if sort else self.region_or_gene_ids_loaded.ids)
                     + (self.all_motif_or_track_ids.type.value,)
                 )
 
@@ -724,21 +678,15 @@ class CisTargetDatabase:
         if engine == "polars":
             # Store prefetched data as polars DataFrame (self.df_cached) and read data
             # with polars' native IPC reader.
-            self._prefetch_as_polars_dataframe(
-                region_or_gene_ids=region_or_gene_ids, use_pyarrow=False, sort=sort
-            )
+            self._prefetch_as_polars_dataframe(region_or_gene_ids=region_or_gene_ids, use_pyarrow=False, sort=sort)
         elif engine == "polars_pyarrow":
             # Store prefetched data as polars DataFrame (self.df_cached) and read data
             # with pyarrow's native IPC reader.
-            self._prefetch_as_polars_dataframe(
-                region_or_gene_ids=region_or_gene_ids, use_pyarrow=True, sort=sort
-            )
+            self._prefetch_as_polars_dataframe(region_or_gene_ids=region_or_gene_ids, use_pyarrow=True, sort=sort)
         elif engine == "pyarrow":
             # Store prefetched data as pyarrow Table (self.df_cached) and read data
             # with pyarrow's native IPC reader.
-            self._prefetch_as_pyarrow_table(
-                region_or_gene_ids=region_or_gene_ids, sort=sort
-            )
+            self._prefetch_as_pyarrow_table(region_or_gene_ids=region_or_gene_ids, sort=sort)
         else:
             msg = f'Unsupported engine "{engine}" for reading cisTarget database.'
             raise ValueError(msg)
@@ -812,9 +760,7 @@ class CisTargetDatabase:
             pd_df.set_index("motifs" if self.is_motifs_db else "tracks", inplace=True)
 
             # Add "regions" or "genes" as column index name.
-            pd_df.rename_axis(
-                columns="regions" if self.is_regions_db else "genes", inplace=True
-            )
+            pd_df.rename_axis(columns="regions" if self.is_regions_db else "genes", inplace=True)
 
             return pd_df
         else:

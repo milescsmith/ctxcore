@@ -1,8 +1,11 @@
 """Core functions for pycisTarget and the SCENIC tool suite."""
 
-import contextlib
+from importlib.metadata import PackageNotFoundError, version
 
-from pkg_resources import DistributionNotFound, get_distribution
-
-with contextlib.suppress(DistributionNotFound):
-    __version__ = get_distribution("ctxcore").version
+try:
+    if isinstance(__package__, str):
+        __version__ = version(__package__)
+    else:
+        __version__ = "unknown"
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "unknown"

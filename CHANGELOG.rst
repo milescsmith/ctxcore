@@ -6,6 +6,15 @@ Change Log
 Version History
 ---------------
 
+0.4.0
+    * Add support for Python 3.12 and 3.13.
+      * Cannot yet use 3.14 because for some reason, `scipy.__version__` does not work and causes numba to throw a fit.
+    * Get rid of using `pkg_resources` since that is deprecated and instead use `importlib.resources`
+    * Pin all dependencies to specific versions
+    * Update code to use Path objects instead of strings for file paths.
+    * Add nox for testing
+    * Change build system from setuptools to uv
+
 0.3.0
     * Add binarize function from pySCENIC.
     * Add aucell function from pySCENIC.
